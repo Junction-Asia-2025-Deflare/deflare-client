@@ -65,10 +65,10 @@ export default function ShelterSheet({ shelters, here }: Props) {
   const onPointerDown: React.PointerEventHandler = (e) => {
     dragging.current = true;
     setIsDragging(true);
+    containerRef.current?.setPointerCapture(e.pointerId); // ✅ 이것만
 
     startY.current = e.clientY;
     startTop.current = top;
-    (e.target as HTMLElement).setPointerCapture(e.pointerId);
     document.body.style.userSelect = "none";
   };
 
@@ -78,15 +78,25 @@ export default function ShelterSheet({ shelters, here }: Props) {
     setTop(clampTop(startTop.current + delta));
   };
 
-  const onPointerUp: React.PointerEventHandler = () => {
+  const onPointerUp: React.PointerEventHandler = (e) => {
     if (!dragging.current) return;
     dragging.current = false;
     setIsDragging(false); // ✅ 추가
     document.body.style.userSelect = "";
 
-    // 스냅: 중간선 기준으로 열기/닫기
-    const middle = (openTop + closedTop()) / 2;
-    setTop((prev) => (prev < middle ? openTop : closedTop()));
+    containerRef.current?.releasePointerCapture(e.pointerId); // ✅ 해제
+
+    // 1/3 스냅 로직
+    const open = openTop;
+    const closed = closedTop();
+    const range = closed - open; // 이동 가능 범위
+    const threshold = range / 3; // 1/3 임계치
+    const delta = top - startTop.current; // 아래로 양수, 위로 음수
+    const startedOpen = startTop.current <= (open + closed) / 2;
+
+    if (delta <= -threshold) setTop(open); // 위로 1/3 이상 → 열기
+    else if (delta >= threshold) setTop(closed); // 아래로 1/3 이상 → 닫기
+    else setTop(startedOpen ? open : closed); // 임계 미만 → 원래 상태
   };
 
   // 거리 계산(있을 때만)
@@ -127,6 +137,7 @@ export default function ShelterSheet({ shelters, here }: Props) {
       <div
         className="cursor-grab select-none px-[14px] pt-2"
         onPointerDown={onPointerDown}
+        style={{ touchAction: "none" }} // ✅ 추가
       >
         <div
           className={`mx-auto h-[5px] w-9 rounded-full bg-[#AEA6A3]

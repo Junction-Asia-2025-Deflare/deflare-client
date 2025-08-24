@@ -1,7 +1,7 @@
 // src/components/FireCellsFromBounds.tsx
 import { Polygon } from "react-leaflet";
 import type { LatLngExpression } from "leaflet";
-import type { FireCell } from "@/types/ire";
+import type { FireCell } from "@/types/fire";
 import { boundsToPolygonCoords } from "@/utils/bound";
 
 export default function FireCellsFromBounds({

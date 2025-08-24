@@ -15,7 +15,7 @@ const shelterIcon = L.icon({
   className: "shelter-marker",
 });
 
-export default function ShelterMarkers({ shelters, showLabel = false }: Props) {
+export default function ShelterMarkers({ shelters }: Props) {
   return (
     <>
       {shelters
@@ -25,7 +25,7 @@ export default function ShelterMarkers({ shelters, showLabel = false }: Props) {
             key={s.id}
             position={[s.lat, s.lng]}
             icon={shelterIcon}
-            zIndexOffset={100}
+            zIndexOffset={10}
           >
             <Tooltip direction="bottom" offset={[0, -10]} opacity={0.95}>
               <div className="text-xs">

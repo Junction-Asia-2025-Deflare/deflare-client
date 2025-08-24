@@ -3,6 +3,8 @@ import MapView from "@/components/MapView";
 import type { LatLng } from "@/types/types";
 import { getSafePath, initFire } from "@/apis/api";
 
+export const SAFE_PATH_CACHE_KEY = "safe_path_cache_v1";
+
 export default function Home() {
   const [here, setHere] = useState<LatLng | null>(null);
   const [cellsFromBounds, setCellsFromBounds] = useState<any[]>([]);
@@ -18,6 +20,8 @@ export default function Home() {
   const [showSafe, setShowSafe] = useState(false);
   const [isFetchingSafe, setIsFetchingSafe] = useState(false);
 
+  const [isTextChange, setIsTextChange] = useState(false);
+
   useEffect(() => {
     if (!navigator.geolocation) return;
     navigator.geolocation.getCurrentPosition(
@@ -30,10 +34,6 @@ export default function Home() {
       (err) => console.error("Geolocation error:", err),
       { enableHighAccuracy: true, timeout: 10000 }
     );
-    // setHere({
-    //   lat: 36.0506268448892,
-    //   lng: 129.347775824442,
-    // });
   }, []);
 
   useEffect(() => {
@@ -64,14 +64,61 @@ export default function Home() {
 
     // 꺼져 있으면 불러오기
     setIsFetchingSafe(true);
+    // try {
+    //   const pathRes = await getSafePath(here.lat, here.lng); // ← 서버가 "가장 가까운 대피소"로 경로를 주는 경우
+    //   setSafeRoute(pathRes.safe_path.route as [number, number][]);
+    //   setSafeStart(pathRes.safe_path.start as [number, number]);
+    //   const sh = pathRes.safe_path.shelter;
+    //   setSafeShelter(
+    //     sh ? { lat: Number(sh.lat), lon: Number(sh.lon), name: sh.name } : null
+    //   );
+    //   setShowSafe(true);
+    // } catch (err) {
+    //   console.error(err);
+    // } finally {
+    //   setIsFetchingSafe(false);
+    // }
     try {
-      const pathRes = await getSafePath(here.lat, here.lng); // ← 서버가 "가장 가까운 대피소"로 경로를 주는 경우
-      setSafeRoute(pathRes.safe_path.route as [number, number][]);
-      setSafeStart(pathRes.safe_path.start as [number, number]);
-      const sh = pathRes.safe_path.shelter;
+      setIsTextChange(true);
+      const cached = localStorage.getItem(SAFE_PATH_CACHE_KEY);
+
+      if (cached) {
+        const sp = JSON.parse(cached); // { route, start, shelter, ts }
+        setSafeRoute(sp.route as [number, number][]);
+        setSafeStart(sp.start as [number, number]);
+        setSafeShelter(
+          sp.shelter
+            ? {
+                lat: Number(sp.shelter.lat),
+                lon: Number(sp.shelter.lon),
+                name: sp.shelter.name,
+              }
+            : null
+        );
+        setShowSafe(true);
+        return;
+      }
+      // 캐시가 없으면 즉시 요청 (폴백)
+      const pathRes = await getSafePath(here.lat, here.lng);
+      const sp = pathRes.safe_path;
+      setSafeRoute(sp.route as [number, number][]);
+      setSafeStart(sp.start as [number, number]);
       setSafeShelter(
-        sh ? { lat: Number(sh.lat), lon: Number(sh.lon), name: sh.name } : null
+        sp.shelter
+          ? {
+              lat: Number(sp.shelter.lat),
+              lon: Number(sp.shelter.lon),
+              name: sp.shelter.name,
+            }
+          : null
       );
+
+      // 받아온 것도 캐시해 두기
+      localStorage.setItem(
+        SAFE_PATH_CACHE_KEY,
+        JSON.stringify({ ...sp, ts: Date.now() })
+      );
+
       setShowSafe(true);
     } catch (err) {
       console.error(err);
@@ -91,6 +138,8 @@ export default function Home() {
         safeShelter={safeShelter}
         onNearestClick={handleToggleSafePath} // ← 클릭 콜백 전달
         isFetchingSafe={isFetchingSafe} // (선택) 로딩 표시용
+        setIsTextChange={setIsTextChange}
+        isTextChange={isTextChange}
       />
     </div>
   );

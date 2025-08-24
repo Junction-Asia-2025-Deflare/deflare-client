@@ -30,7 +30,8 @@ export default function MapView({
   safeStart,
   safeShelter,
   onNearestClick,
-  isFetchingSafe,
+  // isFetchingSafe,
+  isTextChange,
 }: PropsWithChildren<{
   centers: LatLng[];
   cellSizeM: number;
@@ -44,6 +45,7 @@ export default function MapView({
   safeShelter?: { lat: number; lon: number; name?: string } | null;
   onNearestClick?: () => void;
   isFetchingSafe?: boolean;
+  setIsTextChagne?: () => void;
 }>) {
   const [shelterList, setShelterList] = useState<Shelter[]>([]);
   const [showSecond, setShowSecond] = useState(false);
@@ -102,8 +104,8 @@ export default function MapView({
 
   return (
     <MapContainer
-      center={[37.5665, 126.978]}
-      zoom={12}
+      center={[36.09120726015081, 129.3928798057884]}
+      zoom={14}
       zoomControl={false}
       className="h-[calc(100dvh)] w-full"
     >
@@ -113,8 +115,10 @@ export default function MapView({
       />
 
       <div className="absolute flex flex-col items-end top-[10.5px] right-[14px] z-[1200]">
-        <div className="flex flex-row">
-          <ExtremeUrl />
+        <div className="relative flex flex-row">
+          <div className="absolute right-[44px]">
+            <ExtremeUrl />
+          </div>
           <button
             type="button"
             onClick={() => setShowInfoModal((v) => !v)}
@@ -224,7 +228,7 @@ export default function MapView({
                 background:
                   "linear-gradient(0deg, rgba(174, 166, 163, 0.3), rgba(174, 166, 163, 0.3)), #FFFFFF",
               }
-            : undefined
+            : { boxShadow: "0px 2px 20px rgba(247, 188, 13, 0.7)" }
         }
       >
         <img
@@ -244,7 +248,11 @@ export default function MapView({
         className="absolute left-1/2 -translate-x-1/2 flex flex-row gap-[6px] bottom-[126.5px] px-[14px] py-[10px] text-white border-2 border-white rounded-full bg-[#39A909] z-[1400] whitespace-nowrap"
       >
         <span className="font-bold">Nearest</span>
-        <span>Shelter Name · 1.2km</span>
+        {!isTextChange ? (
+          <span>Shelter Name · -.-km</span>
+        ) : (
+          <span>Haksan Women’s Senior Center · 181m</span>
+        )}
       </div>
 
       {/* 🔥 발화 폴리곤들 */}
